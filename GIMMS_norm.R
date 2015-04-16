@@ -38,6 +38,7 @@ colnames(HistGIMMS_ts)[2] <- "NDVI_AVH"
 colnames(HistGIMMS_ts)[3] <- "Year"
 colnames(HistGIMMS_ts)[4] <- "Month"
 
+HistGIMMS_YRLY <- aggregate(NDVI_AVH ~ Year + id, HistGIMMS_ts, FUN=mean)
   
 #Contemporary GIMMS ---------------------------------------
 ContGIMMS <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/ndvi/ndvi_extract_merge.csv"
@@ -63,24 +64,37 @@ ContGIMMS_ts <- melt(ContGIMMS_df,id="id")
 ContGIMMS_ts <- cSplit(ContGIMMS_ts, "variable", "-")
 
 #Aggregate and rename columns for use
-ContGIMMS_ts <- aggregate(value ~ variable_1 + variable_2 + id, ContGIMMS_ts, FUN=mean)
+ContGIMMS_ts <- aggregate(value ~ variable_1 + variable_2 + id, ContGIMMS_ts, FUN=max)
+
 colnames(ContGIMMS_ts)[1] <- "Year"
 colnames(ContGIMMS_ts)[2] <- "Month"
 colnames(ContGIMMS_ts)[3] <- "id"
 colnames(ContGIMMS_ts)[4] <- "NDVI_MOD"
+ContGIMMS_YRLY <- aggregate(NDVI_MOD ~ Year + id, ContGIMMS_ts, FUN=mean)
 
 HC_GIMMS <- merge(HistGIMMS_ts, ContGIMMS_ts, by=c("id","Year","Month"))
+HC_GIMMS$date <- paste(HC_GIMMS$Year, HC_GIMMS$Month, sep="-")
+HC_GIMMS_YRLY <- merge(HistGIMMS_YRLY, ContGIMMS_YRLY, by=c("id","Year"))
 
 HC_GIMMS[HC_GIMMS == 0] <- NA
-plot(HC_GIMMS$NDVI_AVH, HC_GIMMS$NDVI_MOD)
+HC_GIMMS_YRLY[HC_GIMMS_YRLY == 0] <- NA
 
-abline(lm(NDVI_MOD ~ NDVI_AVH, data=HC_GIMMS), col='red')
+plot(HC_GIMMS_YRLY$NDVI_AVH, HC_GIMMS_YRLY$NDVI_MOD)
 
-FElm <- lm(NDVI_MOD ~ NDVI_AVH + factor(id), data=HC_GIMMS)
+summary(lm(NDVI_MOD~ NDVI_AVH, data=HC_GIMMS_YRLY))
+abline(lm(NDVI_MOD~ NDVI_AVH, data=HC_GIMMS_YRLY), col="blue")
 
-abline(FElm, col="blue")
+summary(lm(NDVI_MOD~NDVI_AVH+factor(id), data=HC_GIMMS_YRLY))
+abline(lm(NDVI_MOD~ NDVI_AVH+factor(id), data=HC_GIMMS_YRLY),col="red")
 
-ggplot() + geom_point(aes(x=Month,y=NDVI_MOD), data=HC_GIMMS)
+ggplot() + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_MOD,fill="blue")) + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_AVH,fill="red"))
+
+HC_GIMMS_YRLY <- HC_GIMMS_YRLY[complete.cases(HC_GIMMS_YRLY),]
+HC_GIMMS_YRLY["SIM_MOD"] <- predict(lm(NDVI_MOD~NDVI_AVH+factor(id), data=HC_GIMMS_YRLY))
+
+plot(HC_GIMMS_YRLY$SIM_MOD, HC_GIMMS_YRLY$NDVI_MOD)
+ggplot() + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_MOD,fill="blue")) + geom_density(data=HC_GIMMS_YRLY, aes(SIM_MOD,fill="red"))
+
 
 #Merge it in
 #kfw.SPDF <- merge(cln_Shp, HistGIMMS, by.x="id", by.y="id")
