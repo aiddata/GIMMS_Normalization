@@ -90,11 +90,34 @@ abline(lm(NDVI_MOD~ NDVI_AVH+factor(id), data=HC_GIMMS_YRLY),col="red")
 ggplot() + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_MOD,fill="blue")) + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_AVH,fill="red"))
 
 HC_GIMMS_YRLY <- HC_GIMMS_YRLY[complete.cases(HC_GIMMS_YRLY),]
+
+
+
+AVH_model <- lm(NDVI_MOD~NDVI_AVH+factor(id), data=HC_GIMMS_YRLY)
 HC_GIMMS_YRLY["SIM_MOD"] <- predict(lm(NDVI_MOD~NDVI_AVH+factor(id), data=HC_GIMMS_YRLY))
 
 plot(HC_GIMMS_YRLY$SIM_MOD, HC_GIMMS_YRLY$NDVI_MOD)
+abline(lm(SIM_MOD ~ NDVI_AVH, data=HC_GIMMS_YRLY))
 ggplot() + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_MOD,fill="blue")) + geom_density(data=HC_GIMMS_YRLY, aes(SIM_MOD,fill="red"))
 
+#Apply the model to the historic AVHRR data for analysis...
+#Historic GIMMS NDVI
+GIMMS_hist <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/historic_ndvi_extract_year_max.csv"
+GIMMS_hist <- read.csv(GIMMS_hist)
 
-#Merge it in
-#kfw.SPDF <- merge(cln_Shp, HistGIMMS, by.x="id", by.y="id")
+#Kick out communities for which AVHRR is null
+GIMMS_hist[GIMMS_hist == 0] <- NA
+GIMMS_hist <- GIMMS_hist[complete.cases(GIMMS_hist),]
+len_gim <- length(GIMMS_hist)
+for(i in 2:len_gim)
+{
+
+nm = paste("NDVI_SIM_",colnames(GIMMS_hist)[2], sep="")
+colnames(GIMMS_hist)[2] <- "NDVI_AVH"
+GIMMS_hist[nm] <- predict(AVH_model, newdata=GIMMS_hist)
+GIMMS_hist <- GIMMS_hist[-c(2)]
+}
+
+#Write it out as a CSV for later use
+path_G <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/historic_ndvi_SIMULATED_yearly.csv"
+write.csv(GIMMS_hist, path_G)
