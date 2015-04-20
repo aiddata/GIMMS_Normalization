@@ -97,7 +97,7 @@ AVH_model <- lm(NDVI_MOD~NDVI_AVH+factor(id), data=HC_GIMMS_YRLY)
 HC_GIMMS_YRLY["SIM_MOD"] <- predict(lm(NDVI_MOD~NDVI_AVH+factor(id), data=HC_GIMMS_YRLY))
 
 plot(HC_GIMMS_YRLY$SIM_MOD, HC_GIMMS_YRLY$NDVI_MOD)
-abline(lm(SIM_MOD ~ NDVI_AVH, data=HC_GIMMS_YRLY))
+
 ggplot() + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_MOD,fill="blue")) + geom_density(data=HC_GIMMS_YRLY, aes(SIM_MOD,fill="red"))
 
 #Apply the model to the historic AVHRR data for analysis...
