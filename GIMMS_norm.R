@@ -14,7 +14,7 @@ cln_Shp <- src_Shp[,c("terrai_nom","terrai_are","reu_id","id")]
 #Load in the data to join to the shapefile
 #======================================================
 #Historic GIMMS -------------------------------------------
-HistGIMMS <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/historic_ndvi_extract_merge.csv"
+HistGIMMS <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/extract_merge.csv"
 HistGIMMS <- read.csv(HistGIMMS)
 #Copy only relevant columns of overlap...
 HistGIMMS_df <- HistGIMMS[,c(1,226:259)]
@@ -41,7 +41,7 @@ colnames(HistGIMMS_ts)[4] <- "Month"
 HistGIMMS_YRLY <- aggregate(NDVI_AVH ~ Year + id, HistGIMMS_ts, FUN=mean)
   
 #Contemporary GIMMS ---------------------------------------
-ContGIMMS <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/ndvi/ndvi_extract_merge.csv"
+ContGIMMS <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/ndvi/extract_merge.csv"
 ContGIMMS <- read.csv(ContGIMMS)
 
 #Copy only relevant dates of overlap into a new DF
@@ -64,7 +64,7 @@ ContGIMMS_ts <- melt(ContGIMMS_df,id="id")
 ContGIMMS_ts <- cSplit(ContGIMMS_ts, "variable", "-")
 
 #Aggregate and rename columns for use
-ContGIMMS_ts <- aggregate(value ~ variable_1 + variable_2 + id, ContGIMMS_ts, FUN=max)
+ContGIMMS_ts <- aggregate(value ~ variable_1 + variable_2 + id, ContGIMMS_ts, FUN=mean)
 
 colnames(ContGIMMS_ts)[1] <- "Year"
 colnames(ContGIMMS_ts)[2] <- "Month"
@@ -102,8 +102,8 @@ ggplot() + geom_density(data=HC_GIMMS_YRLY, aes(NDVI_MOD,fill="blue")) + geom_de
 
 #Apply the model to the historic AVHRR data for analysis...
 #Historic GIMMS NDVI
-GIMMS_hist <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/historic_ndvi_extract_year_max.csv"
-GIMMS_hist <- read.csv(GIMMS_hist)
+ GIMMS_hist <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/extract_merge.csv"
+ GIMMS_hist <- read.csv(GIMMS_hist)
 
 #Kick out communities for which AVHRR is null
 GIMMS_hist[GIMMS_hist == 0] <- NA
@@ -119,5 +119,5 @@ GIMMS_hist <- GIMMS_hist[-c(2)]
 }
 
 #Write it out as a CSV for later use
-path_G <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/historic_ndvi_SIMULATED_yearly.csv"
+path_G <- "/mnt/sciclone-aiddata/REU/projects/kfw/extracts/historic_ndvi/historic_ndvi_SIMULATED_MEAN_yearly.csv"
 write.csv(GIMMS_hist, path_G)
